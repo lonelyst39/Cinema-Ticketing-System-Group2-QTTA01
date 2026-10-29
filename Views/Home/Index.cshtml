@@ -1,0 +1,63 @@
+﻿@model IEnumerable<WebApplication10.Models.Movie>
+
+<section class="bg0 p-t-23 p-b-140">
+    <div class="container">
+        <div class="p-b-10 text-center">
+            <h3 class="ltext-103 cl5" style="border-bottom: 3px double #111; display: inline-block; padding-bottom: 10px;">
+                MOVIE SELECTION
+            </h3>
+        </div>
+
+        <!-- Bộ lọc thể loại (Tận dụng Isotope của CozaStore) -->
+        <div class="flex-w flex-sb-m p-b-52">
+            <div class="flex-w flex-l-m filter-tope-group m-tb-10">
+                <button class="stext-106 cl6 hov1 bor3 trans-04 m-r-32 m-tb-5 how-active1" data-filter="*">
+                    Tất cả phim
+                </button>
+                @foreach (var genre in ViewBag.Genres)
+                {
+                    <button class="stext-106 cl6 hov1 bor3 trans-04 m-r-32 m-tb-5" data-filter=".@genre.Replace(" ", "")">
+                        @genre
+                    </button>
+                }
+            </div>
+        </div>
+
+        <!-- Lưới hiển thị Poster Phim -->
+        <div class="row isotope-grid">
+            @foreach (var item in Model)
+            {
+                var ratingClass = item.AgeRating == "P" ? "rating-P" : "rating-" + item.AgeRating.Replace("+", "");
+                <div class="col-sm-6 col-md-4 col-lg-3 p-b-35 isotope-item @item.Genre.Replace(" ", "")">
+                    <div class="block2">
+                        <div class="block2-pic hov-img0">
+                            <span class="badge-rating @ratingClass">@item.AgeRating</span>
+                            <!-- Nếu chưa có ảnh thật của từng phim, dùng tạm ảnh product/banner trong CozaStore -->
+                            <img src="~/images/@(item.Poster ?? "banner-01.jpg")" onerror="this.src='/images/banner-01.jpg'" alt="@item.Title">
+
+                            <a asp-controller="Booking" asp-action="SelectShowtime" asp-route-movieId="@item.MovieId"
+                               class="block2-btn flex-c-m stext-103 cl0 size-102 bg1 bor2 hov-btn1 p-lr-15 trans-04">
+                                MUA VÉ
+                            </a>
+                        </div>
+
+                        <div class="block2-txt flex-w flex-t p-t-14">
+                            <div class="block2-txt-child1 flex-col-l">
+                                <a asp-controller="Booking" asp-action="SelectShowtime" asp-route-movieId="@item.MovieId"
+                                   class="stext-104 cl2 hov-cl1 trans-04 js-name-b2 p-b-6 font-weight-bold">
+                                    @item.Title
+                                </a>
+                                <span class="stext-105 cl3">
+                                    <strong>Thể loại:</strong> @item.Genre | <strong>Ngôn ngữ:</strong> @item.Language
+                                </span>
+                                <span class="stext-105 cl3">
+                                    <strong>Khởi chiếu:</strong> @item.ReleaseDate.ToString("dd/MM/yyyy")
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</section>

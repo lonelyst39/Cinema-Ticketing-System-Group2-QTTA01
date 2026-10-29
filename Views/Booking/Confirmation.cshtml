@@ -1,0 +1,66 @@
+﻿@model WebApplication10.Models.Booking
+
+<div class="container p-t-80 p-b-100">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-danger text-white text-center py-3">
+                    <h3>đặt vé thành công!</h3>
+                    <p class="mb-0">Cảm ơn bạn đã sử dụng dịch vụ của hệ thống rạp chiếu phim CGV.</p>
+                </div>
+                <div class="card-body p-4 bg-light">
+                    <div class="row mb-3">
+                        <div class="col-sm-6">
+                            <p><strong>Mã giao dịch:</strong> @Model.Payment?.TransactionCode</p>
+                            <p><strong>Khách hàng (UserID):</strong> @Model.UserId</p>
+                            <p><strong>Ngày đặt:</strong> @Model.BookingDate.ToString("dd/MM/yyyy HH:mm")</p>
+                        </div>
+                        <div class="col-sm-6 text-sm-right">
+                            <p><strong>Trạng thái thanh toán:</strong> <span class="badge badge-success">@Model.Payment?.PaymentStatus</span></p>
+                            <p><strong>Tổng tiền:</strong> <span class="text-danger font-weight-bold" style="font-size: 18px;">@Model.TotalAmount.ToString("N0") đ</span></p>
+                        </div>
+                    </div>
+
+                    <hr />
+
+                    <div class="media mb-4">
+                        <div class="media-body">
+                            <h4 class="text-warning font-weight-bold">@Model.Showtime.Movie.Title</h4>
+                            <p class="text-muted mb-1"><strong>Rạp:</strong> @Model.Showtime.Room.Cinema.CinemaName - @Model.Showtime.Room.RoomName</p>
+                            <p class="text-muted mb-1"><strong>Suất chiếu:</strong> @Model.Showtime.StartTime.ToString("HH:mm - dd/MM/yyyy")</p>
+                            <p class="text-muted">
+                                <strong>Ghế đã chọn:</strong> 
+                                @foreach (var detail in Model.BookingDetails)
+                                {
+                                    <span class="badge badge-dark mr-1">@detail.Seat.RowNumber@detail.Seat.SeatNumber (@detail.Seat.SeatType)</span>
+                                }
+                            </p>
+                        </div>
+                    </div>
+
+                    <hr />
+
+                    <h5 class="text-center mb-3">Mã QR Vé Điện Tử (Check-in tại rạp)</h5>
+                    <div class="row text-center">
+                        @foreach (var detail in Model.BookingDetails)
+                        {
+                            <div class="col-md-6 mb-3">
+                                <div class="p-3 bg-white border rounded">
+                                    <p class="font-weight-bold text-primary mb-1">Ghế: @detail.Seat.RowNumber@detail.Seat.SeatNumber</p>
+                                    <img src="@detail.Ticket?.Qrcode" alt="QR Code" style="width: 150px; height: 150px;" />
+                                    <p class="small text-muted mt-2 mb-0">Mã vé: @detail.Ticket?.TicketCode</p>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <a asp-controller="Home" asp-action="Index" class="flex-c-m stext-101 cl0 size-121 bg1 bor1 hov-btn1 p-lr-15 trans-04 mx-auto" style="width: 250px;">
+                            VỀ TRANG CHỦ
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

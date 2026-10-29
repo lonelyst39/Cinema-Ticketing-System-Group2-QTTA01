@@ -1,0 +1,146 @@
+﻿@model IEnumerable<WebApplication10.Models.Seat>
+@{
+    var showtime = ViewBag.Showtime as WebApplication10.Models.Showtime;
+    var occupiedSeats = ViewBag.OccupiedSeats as HashSet<int>;
+    var groupedRows = Model.GroupBy(s => s.RowNumber);
+}
+
+<style>
+    .cinema-screen {
+        width: 80%;
+        height: 45px;
+        margin: 0 auto 40px;
+        background: linear-gradient(to bottom, #ddd, transparent);
+        border-top: 6px solid #e71a0f;
+        border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+        text-align: center;
+        line-height: 45px;
+        font-weight: bold;
+        letter-spacing: 8px;
+        color: #555;
+    }
+    .seat-btn {
+        width: 42px;
+        height: 38px;
+        margin: 4px;
+        border-radius: 6px 6px 2px 2px;
+        font-size: 12px;
+        font-weight: bold;
+        cursor: pointer;
+        border: 1px solid #999;
+        transition: 0.2s;
+    }
+    /* Phân loại màu ghế theo đúng DB của bạn */
+    .seat-Standard { background-color: #fff; color: #333; border-color: #28a745; }
+    .seat-VIP { background-color: #fff3cd; color: #856404; border: 2px solid #e71a0f; }
+    .seat-Couple { background-color: #f8d7da; color: #721c24; border: 2px solid #e83e8c; width: 48px; }
+    
+    /* Trạng thái ghế */
+    .seat-occupied { background-color: #aaa !important; color: #fff !important; border-color: #888 !important; cursor: not-allowed; }
+    .seat-selected { background-color: #b11500 !important; color: #fff !important; border-color: #b11500 !important; transform: scale(1.1); }
+</style>
+
+<div class="container p-t-50 p-b-85">
+    <!-- Thông tin Header giống CGV Booking -->
+    <div class="bg-dark text-white p-3 mb-4 rounded">
+        <h4>@showtime.Room.Cinema.CinemaName | @showtime.Room.RoomName (@showtime.Room.RoomType)</h4>
+        <p class="mb-0">
+            Phim: <strong class="text-warning">@showtime.Movie.Title</strong> | 
+            Suất chiếu: <strong>@showtime.StartTime.ToString("HH:mm - dd/MM/yyyy")</strong>
+        </p>
+    </div>
+
+    <!-- Màn hình -->
+    <div class="cinema-screen">SCREEN</div>
+
+    <!-- Sơ đồ ghế ngồi -->
+    <div class="text-center mb-5">
+        @foreach (var row in groupedRows)
+        {
+            <div class="d-flex justify-content-center align-items-center mb-2">
+                <span class="mr-3 font-weight-bold" style="width: 25px;">@row.Key</span>
+                @foreach (var seat in row)
+                {
+                    bool isOccupied = occupiedSeats.Contains(seat.SeatId);
+                    <button type="button"
+                            class="seat-btn seat-@seat.SeatType @(isOccupied ? "seat-occupied" : "")"
+                            data-id="@seat.SeatId"
+                            data-name="@seat.SeatNumber"
+                            data-type="@seat.SeatType"
+                            data-price="@showtime.Price"
+                            @(isOccupied ? "disabled" : "")>
+                        @seat.SeatNumber
+                    </button>
+                }
+            </div>
+        }
+    </div>
+
+    <!-- Chú thích loại ghế -->
+    <div class="d-flex justify-content-center gap-4 mb-4" style="gap: 20px;">
+        <span><button class="seat-btn seat-Standard" disabled></button> Ghế Thường</span>
+        <span><button class="seat-btn seat-VIP" disabled></button> Ghế VIP</span>
+        <span><button class="seat-btn seat-Couple" disabled></button> Ghế Đôi (Sweetbox)</span>
+        <span><button class="seat-btn seat-selected" disabled></button> Đang chọn</span>
+        <span><button class="seat-btn seat-occupied" disabled></button> Đã đặt</span>
+    </div>
+
+    <!-- Thanh tổng kết đặt vé dưới cùng -->
+    <form asp-action="Checkout" method="post" class="bg-dark text-white p-4 rounded d-flex justify-content-between align-items-center">
+        <input type="hidden" name="ShowtimeId" value="@showtime.ShowtimeId" />
+        <input type="hidden" name="SelectedSeatIds" id="SelectedSeatIds" />
+
+        <div>
+            <div>Ghế đã chọn: <strong id="display-seats" class="text-warning">Chưa chọn</strong></div>
+            <div>Tổng tiền: <strong id="display-total" class="text-danger" style="font-size: 22px;">0 đ</strong></div>
+        </div>
+
+        <button type="submit" id="btn-submit" class="flex-c-m stext-101 cl0 size-116 bg1 bor14 hov-btn1 p-lr-15 trans-04" style="width: 200px;" disabled>
+            TIẾP TỤC THANH TOÁN
+        </button>
+    </form>
+</div>
+
+<script>
+    const selectedSeats = new Map();
+
+    document.querySelectorAll('.seat-btn:not(.seat-occupied)').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const id = this.getAttribute('data-id');
+            const name = this.getAttribute('data-name');
+            const type = this.getAttribute('data-type');
+            let basePrice = parseFloat(this.getAttribute('data-price'));
+
+            // Phụ thu theo loại ghế (Tuỳ chỉnh logic của bạn)
+            if (type === 'VIP') basePrice += 15000;
+            if (type === 'Couple') basePrice += 30000;
+
+            if (this.classList.contains('seat-selected')) {
+                this.classList.remove('seat-selected');
+                selectedSeats.delete(id);
+            } else {
+                this.classList.add('seat-selected');
+                selectedSeats.set(id, { name, price: basePrice });
+            }
+
+            updateSummary();
+        });
+    });
+
+    function updateSummary() {
+        const names = [];
+        let total = 0;
+        const ids = [];
+
+        selectedSeats.forEach((val, key) => {
+            names.push(val.name);
+            total += val.price;
+            ids.push(key);
+        });
+
+        document.getElementById('display-seats').innerText = names.length > 0 ? names.join(', ') : 'Chưa chọn';
+        document.getElementById('display-total').innerText = total.toLocaleString('vi-VN') + ' đ';
+        document.getElementById('SelectedSeatIds').value = ids.join(',');
+        document.getElementById('btn-submit').disabled = ids.length === 0;
+    }
+</script>

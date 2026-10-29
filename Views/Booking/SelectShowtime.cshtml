@@ -1,0 +1,55 @@
+﻿@model IEnumerable<WebApplication10.Models.Showtime>
+@{
+    var movie = ViewBag.Movie as WebApplication10.Models.Movie;
+    var selectedDate = (DateTime)ViewBag.SelectedDate;
+}
+
+<div class="container p-t-80 p-b-100">
+    @if (movie != null)
+    {
+        <div class="row mb-5">
+            <div class="col-md-4">
+                <img src="~/images/@(movie.Poster ?? "banner-01.jpg")" alt="@movie.Title" class="img-fluid rounded border" />
+            </div>
+            <div class="col-md-8">
+                <h2 class="text-dark font-weight-bold">@movie.Title</h2>
+                <p class="text-muted"><strong>Thể loại:</strong> @movie.Genre | <strong>Ngôn ngữ:</strong> @movie.Language</p>
+                <p class="text-muted"><strong>Độ tuổi:</strong> <span class="badge badge-danger">@movie.AgeRating</span></p>
+                <p>@movie.Description</p>
+            </div>
+        </div>
+    }
+
+    <h3 class="mb-4 text-center" style="border-bottom: 2px solid #e71a0f; display: inline-block; padding-bottom: 5px;">
+        CHỌN SUẤT CHIẾU
+    </h3>
+
+    <!-- Danh sách suất chiếu nhóm theo rạp/phòng -->
+    @if (Model != null && Model.Any())
+    {
+        <div class="row">
+            @foreach (var item in Model)
+            {
+                <div class="col-md-4 mb-3">
+                    <div class="card p-3 shadow-sm border-0 bg-white">
+                        <h5 class="text-danger font-weight-bold">@item.Room.Cinema.CinemaName</h5>
+                        <p class="mb-1 text-muted">@item.Room.RoomName (@item.Room.RoomType)</p>
+                        <p class="mb-2"><strong>Giờ chiếu:</strong> @item.StartTime.ToString("HH:mm") - @item.EndTime.ToString("HH:mm")</p>
+                        <p class="mb-3"><strong>Giá vé:</strong> <span class="text-primary font-weight-bold">@item.Price.ToString("N0") đ</span></p>
+                        
+                        <a asp-controller="Booking" asp-action="SeatMap" asp-route-showtimeId="@item.ShowtimeId" 
+                           class="flex-c-m stext-101 cl0 size-107 bg1 bor1 hov-btn1 p-lr-15 trans-04">
+                            CHỌN GHẾ
+                        </a>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-warning text-center">
+            Không có suất chiếu nào vào ngày này. Vui lòng chọn ngày khác!
+        </div>
+    }
+</div>
