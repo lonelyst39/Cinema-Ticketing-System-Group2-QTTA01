@@ -1,0 +1,66 @@
+@model WebApplication10.Models.AdminDashboardViewModel
+@{
+	ViewData["Title"] = "Quản trị";
+	var maxDay = Math.Max(1m, Model.Last7Days.Max(d => d.Amount));
+	var maxTop = Math.Max(1, Model.TopMovies.Any() ? Model.TopMovies.Max(t => t.Tickets) : 1);
+}
+<section class="wrap sec">
+	<h1 class="sec-title">Tổng quan bán vé</h1>
+	<p class="sec-sub">Doanh thu và hoạt động đặt vé tính đến @DateTime.Now.ToString("HH:mm, dd/MM/yyyy").</p>
+
+	<div class="stats">
+		<div class="stat"><small>Doanh thu hôm nay</small><b>@Model.RevenueToday.ToString("N0") đ</b></div>
+		<div class="stat"><small>Tổng doanh thu</small><b>@Model.RevenueTotal.ToString("N0") đ</b></div>
+		<div class="stat"><small>Vé đã bán</small><b>@Model.TicketsSold</b></div>
+		<div class="stat"><small>Đơn đặt vé</small><b>@Model.BookingCount</b></div>
+	</div>
+
+	<div class="two">
+		<div class="panel">
+			<h3>Doanh thu 7 ngày gần nhất</h3>
+			@foreach (var d in Model.Last7Days)
+			{
+				<div class="hbar"><span>@d.Day.ToString("dd/MM")</span><div><i style="width:@((int)(d.Amount / maxDay * 100))%"></i></div><span>@d.Amount.ToString("N0")</span></div>
+			}
+		</div>
+		<div class="panel">
+			<h3>Phim bán chạy</h3>
+			@if (!Model.TopMovies.Any())
+			{
+				<p class="muted">Chưa có vé nào được bán.</p>
+			}
+			@foreach (var t in Model.TopMovies)
+			{
+				<div class="hbar"><span title="@t.Title" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">@t.Title</span><div><i style="width:@(t.Tickets * 100 / maxTop)%"></i></div><span>@t.Tickets vé</span></div>
+			}
+		</div>
+	</div>
+
+	<div class="panel">
+		<h3>Soát vé tại quầy</h3>
+		<form asp-action="Verify" method="post" class="promo">
+			<input class="input" name="code" placeholder="Nhập mã vé, ví dụ TK2611…" autocomplete="off" required />
+			<button class="btn btn-brass" type="submit"><i class="fa fa-check"></i> Xác nhận vào rạp</button>
+		</form>
+	</div>
+
+	<div class="panel">
+		<h3>Đơn đặt vé gần đây</h3>
+		<div class="tablew">
+			<table>
+				<thead><tr><th>Mã</th><th>Khách hàng</th><th>Phim</th><th>Số ghế</th><th>Tổng tiền</th><th>Trạng thái</th><th>Thời gian</th></tr></thead>
+				<tbody>
+					@foreach (var r in Model.Recent)
+					{
+						<tr>
+							<td><a asp-controller="Booking" asp-action="Confirmation" asp-route-bookingId="@r.BookingId" style="color:var(--brass-2)">#@r.BookingId</a></td>
+							<td>@r.Customer</td><td>@r.Movie</td><td>@r.Seats</td><td>@r.Total.ToString("N0") đ</td>
+							<td><span class="badge @(r.Status == "Cancelled" ? "b-bad" : "b-ok")">@(r.Status == "Cancelled" ? "Đã hủy" : "Hoàn tất")</span></td>
+							<td>@r.Date.ToString("HH:mm dd/MM")</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+	</div>
+</section>

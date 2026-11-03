@@ -1,0 +1,24 @@
+@model WebApplication10.Models.Booking
+@{
+	var now = DateTime.Now;
+	var label = Model.BookingStatus == "Cancelled" ? "Đã hủy" : Model.Showtime.EndTime < now ? "Đã xem" : "Sắp chiếu";
+	var css = Model.BookingStatus == "Cancelled" ? "b-bad" : Model.Showtime.EndTime < now ? "b-mid" : "b-ok";
+}
+<a asp-action="Confirmation" asp-route-bookingId="@Model.BookingId" class="order">
+	<partial name="_Poster" model="Model.Showtime.Movie" />
+	<div>
+		<h4>@Model.Showtime.Movie.Title</h4>
+		<div class="muted" style="font-size:14px">@Model.Showtime.Room.Cinema.CinemaName, @Model.Showtime.Room.RoomName</div>
+		<div class="muted" style="font-size:14px">@Model.Showtime.StartTime.ToString("HH:mm, dd/MM/yyyy")</div>
+		<div class="chips" style="margin-top:8px">
+			@foreach (var d in Model.BookingDetails.OrderBy(d => d.Seat.RowNumber).ThenBy(d => d.SeatId))
+			{
+				<span class="chip" style="cursor:default">@d.Seat.SeatNumber</span>
+			}
+		</div>
+	</div>
+	<div style="text-align:right">
+		<span class="badge @css">@label</span>
+		<div class="total" style="font-size:22px;margin-top:6px">@Model.TotalAmount.ToString("N0") đ</div>
+	</div>
+</a>

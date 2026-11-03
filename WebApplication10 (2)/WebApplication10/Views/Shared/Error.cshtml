@@ -1,0 +1,19 @@
+@model ErrorViewModel
+@{
+	var code = ViewBag.Code as int? ?? 500;
+	ViewData["Title"] = "Có lỗi xảy ra";
+	var title = code == 404 ? "Không tìm thấy trang" : code == 403 ? "Bạn không có quyền truy cập" : "Có lỗi xảy ra";
+	var text = code == 404 ? "Đường dẫn này không tồn tại hoặc phim, suất chiếu đã bị gỡ."
+		: code == 403 ? "Trang này chỉ dành cho chủ vé hoặc quản trị viên."
+		: "Hệ thống chưa xử lý được yêu cầu của bạn. Vui lòng thử lại sau ít phút.";
+}
+<section class="wrap center" style="padding:90px 0">
+	<div style="font:700 clamp(5rem,16vw,9rem)/1 var(--display);color:var(--velvet-2)">@code</div>
+	<h1>@title</h1>
+	<p class="muted">@text</p>
+	<a asp-controller="Home" asp-action="Index" class="btn btn-primary">Về trang chủ</a>
+	@if (Model?.ShowRequestId == true)
+	{
+		<p class="muted" style="margin-top:28px;font-size:13px">Mã yêu cầu: <code>@Model.RequestId</code></p>
+	}
+</section>

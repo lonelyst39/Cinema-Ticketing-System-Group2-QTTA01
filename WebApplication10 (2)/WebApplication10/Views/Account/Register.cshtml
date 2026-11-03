@@ -1,0 +1,44 @@
+@{
+	ViewData["Title"] = "Đăng ký";
+}
+<section class="wrap">
+	<div class="auth panel" style="max-width:520px">
+		<h1>Tạo tài khoản</h1>
+		<p class="muted">Chỉ mất một phút để bắt đầu đặt vé trực tuyến.</p>
+
+		@if (ViewBag.Error != null)
+		{
+			<div class="alert bad" role="alert"><i class="fa fa-exclamation-triangle"></i> @ViewBag.Error</div>
+		}
+
+		<form asp-action="Register" method="post">
+			<div class="field">
+				<label for="FullName">Họ và tên</label>
+				<input id="FullName" name="FullName" class="input" required autocomplete="name" placeholder="Nguyễn Văn A" />
+			</div>
+			<div class="field">
+				<label for="Email">Email</label>
+				<input id="Email" type="email" name="Email" class="input" required autocomplete="email" placeholder="ten@@email.com" />
+			</div>
+			<div class="field">
+				<label for="Phone">Số điện thoại</label>
+				<input id="Phone" type="tel" name="Phone" class="input" required autocomplete="tel" inputmode="tel" placeholder="0912345678" />
+			</div>
+			<div class="field">
+				<label for="Address">Địa chỉ</label>
+				<input id="Address" name="Address" class="input" required autocomplete="street-address" placeholder="Số nhà, đường, quận/huyện" />
+			</div>
+			<div class="field">
+				<label for="Password">Mật khẩu</label>
+				<div class="pw">
+					<input id="Password" type="password" name="Password" class="input" required autocomplete="new-password" placeholder="Tạo mật khẩu" />
+					<button type="button" data-toggle-pw aria-label="Hiện hoặc ẩn mật khẩu"><i class="fa fa-eye"></i></button>
+				</div>
+			</div>
+			<button type="submit" class="btn btn-primary btn-block" style="padding:13px">Đăng ký</button>
+		</form>
+		<p class="center muted" style="margin:20px 0 0;font-size:14px">
+			Đã có tài khoản? <a asp-action="Login" style="color:var(--brass-2);font-weight:600">Đăng nhập</a>
+		</p>
+	</div>
+</section>

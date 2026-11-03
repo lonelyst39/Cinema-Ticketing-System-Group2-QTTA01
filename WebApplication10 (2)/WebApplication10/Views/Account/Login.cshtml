@@ -1,0 +1,33 @@
+@{
+	ViewData["Title"] = "Đăng nhập";
+}
+<section class="wrap">
+	<div class="auth panel">
+		<h1>Đăng nhập</h1>
+		<p class="muted">Đăng nhập để chọn ghế, xem vé và dùng mã khuyến mãi.</p>
+
+		@if (ViewBag.Error != null)
+		{
+			<div class="alert bad" role="alert"><i class="fa fa-exclamation-triangle"></i> @ViewBag.Error</div>
+		}
+
+		<form asp-action="Login" method="post">
+			<input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
+			<div class="field">
+				<label for="username">Email</label>
+				<input id="username" type="email" name="username" class="input" required autocomplete="email" autofocus placeholder="ten@@email.com" />
+			</div>
+			<div class="field">
+				<label for="password">Mật khẩu</label>
+				<div class="pw">
+					<input id="password" type="password" name="password" class="input" required autocomplete="current-password" placeholder="Nhập mật khẩu" />
+					<button type="button" data-toggle-pw aria-label="Hiện hoặc ẩn mật khẩu"><i class="fa fa-eye"></i></button>
+				</div>
+			</div>
+			<button type="submit" class="btn btn-primary btn-block" style="padding:13px">Đăng nhập</button>
+		</form>
+		<p class="center muted" style="margin:20px 0 0;font-size:14px">
+			Chưa có tài khoản? <a asp-action="Register" style="color:var(--brass-2);font-weight:600">Đăng ký miễn phí</a>
+		</p>
+	</div>
+</section>

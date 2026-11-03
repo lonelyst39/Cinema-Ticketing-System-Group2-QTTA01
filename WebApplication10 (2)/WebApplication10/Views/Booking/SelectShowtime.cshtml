@@ -1,0 +1,96 @@
+@model IEnumerable<WebApplication10.Models.Showtime>
+@using System.Globalization
+@{
+	var movie = (WebApplication10.Models.Movie)ViewBag.Movie;
+	var selected = (DateTime)ViewBag.SelectedDate;
+	var free = ViewBag.FreeSeats as Dictionary<int, int> ?? new Dictionary<int, int>();
+	var vi = new CultureInfo("vi-VN");
+	var dates = Enumerable.Range(0, 7).Select(i => DateTime.Today.AddDays(i)).ToList();
+	var released = movie.ReleaseDate <= DateOnly.FromDateTime(DateTime.Today);
+	var hue = (movie.MovieId * 47) % 360;
+	var groups = Model.GroupBy(s => s.Room.CinemaId).Select(g => new { Cinema = g.First().Room.Cinema, Items = g.ToList() })
+		.OrderBy(g => g.Cinema.CinemaName).ToList();
+	ViewData["Title"] = movie.Title;
+	string AgeClass(string? r) => (r ?? "").Contains("18") ? "a18" : (r ?? "").Contains("16") ? "a16" : (r ?? "").Contains("13") ? "a13" : "aP";
+}
+
+<section class="detail" style="--h:@hue">
+	<div class="slide-bg" style="background-image:url('@Url.Content("~/images/" + (movie.Poster ?? ""))'),linear-gradient(160deg,hsl(@hue 55% 30%),hsl(@(hue + 40) 50% 12%))"></div>
+	<div class="wrap detail-grid">
+		<div><partial name="_Poster" model="movie" /></div>
+		<div>
+			<div class="chips">
+				<span class="age @AgeClass(movie.AgeRating)">@movie.AgeRating</span>
+				<span class="chip">@movie.Genre</span>
+				<span class="chip">@movie.Language</span>
+			</div>
+			<h1>@movie.Title</h1>
+			<p style="max-width:64ch;color:#e6d9d0">@movie.Description</p>
+			<div class="facts">
+				<div class="fact"><small>Khởi chiếu</small><b>@movie.ReleaseDate.ToString("dd/MM/yyyy")</b></div>
+				<div class="fact"><small>Thể loại</small><b>@movie.Genre</b></div>
+				<div class="fact"><small>Ngôn ngữ</small><b>@movie.Language</b></div>
+			</div>
+			<a href="https://www.youtube.com/results?search_query=@Uri.EscapeDataString(movie.Title + " trailer")" target="_blank" rel="noopener" class="btn btn-ghost"><i class="fa fa-play"></i> Xem trailer</a>
+		</div>
+	</div>
+</section>
+
+<section class="sec" style="padding-top:36px">
+	<div class="wrap">
+		@if (!released)
+		{
+			<div class="empty">
+				<h3>Phim chưa khởi chiếu</h3>
+				<p>Suất chiếu sẽ mở bán từ ngày @movie.ReleaseDate.ToString("dd/MM/yyyy"). Hãy quay lại sau nhé.</p>
+				<a asp-controller="Home" asp-action="Index" class="btn btn-ghost">Xem phim đang chiếu</a>
+			</div>
+		}
+		else
+		{
+			<h2 class="sec-title">Chọn ngày và suất chiếu</h2>
+			<div class="datebar" role="tablist" aria-label="Chọn ngày chiếu">
+				@foreach (var d in dates)
+				{
+					<a asp-action="SelectShowtime" asp-route-movieId="@movie.MovieId" asp-route-selectedDate="@d.ToString("yyyy-MM-dd")"
+					   class="date @(d.Date == selected.Date ? "on" : "")">
+						<small>@(d.Date == DateTime.Today ? "Hôm nay" : d.ToString("ddd", vi))</small>
+						<b>@d.ToString("dd/MM")</b>
+					</a>
+				}
+			</div>
+
+			@if (groups.Any())
+			{
+				foreach (var g in groups)
+				{
+					<div class="cblock">
+						<h3><i class="fa fa-map-marker" style="color:var(--velvet-2)"></i> @g.Cinema.CinemaName</h3>
+						<div class="addr">@g.Cinema.Address</div>
+						<div class="times">
+							@foreach (var s in g.Items)
+							{
+								var left = free.TryGetValue(s.ShowtimeId, out var f) ? f : 0;
+								var off = s.StartTime < DateTime.Now || left == 0;
+								<a asp-action="SeatMap" asp-route-showtimeId="@s.ShowtimeId" class="time @(off ? "off" : "")"
+								   aria-label="Suất @s.StartTime.ToString("HH:mm"), @s.Room.RoomName, @s.Room.RoomType">
+									<b>@s.StartTime.ToString("HH:mm")</b>
+									<small>@s.Room.RoomName, @s.Room.RoomType</small>
+									<small>@s.Price.ToString("N0") đ</small>
+									<small class="@(left <= 10 ? "low" : "")">@(left == 0 ? "Hết ghế" : "Còn " + left + " ghế")</small>
+								</a>
+							}
+						</div>
+					</div>
+				}
+			}
+			else
+			{
+				<div class="empty">
+					<h3>Chưa có suất chiếu vào ngày này</h3>
+					<p>Hãy chọn một ngày khác trên thanh lịch phía trên.</p>
+				</div>
+			}
+		}
+	</div>
+</section>

@@ -1,0 +1,38 @@
+@model IEnumerable<WebApplication10.Models.Booking>
+@{
+	ViewData["Title"] = "Vé của tôi";
+	var now = DateTime.Now;
+	var upcoming = Model.Where(b => b.BookingStatus == "Completed" && b.Showtime.EndTime >= now).ToList();
+	var others = Model.Except(upcoming).ToList();
+}
+
+<section class="wrap sec">
+	<h1 class="sec-title">Vé của tôi</h1>
+	<p class="sec-sub">Xem lại mã QR, hủy vé hoặc tra cứu lịch sử đặt vé.</p>
+
+	@if (!Model.Any())
+	{
+		<div class="empty">
+			<h3>Bạn chưa đặt vé nào</h3>
+			<p>Chọn một bộ phim đang chiếu và đặt vé đầu tiên của bạn.</p>
+			<a asp-controller="Home" asp-action="Index" class="btn btn-primary">Chọn phim</a>
+		</div>
+	}
+	else
+	{
+		@if (upcoming.Any())
+		{
+			<h3 style="margin-top:8px">Sắp tới</h3>
+			<div class="list">
+				@foreach (var b in upcoming) { <partial name="_Order" model="b" /> }
+			</div>
+		}
+		@if (others.Any())
+		{
+			<h3 style="margin-top:32px">Lịch sử</h3>
+			<div class="list">
+				@foreach (var b in others) { <partial name="_Order" model="b" /> }
+			</div>
+		}
+	}
+</section>

@@ -1,0 +1,40 @@
+@using Microsoft.AspNetCore.Http
+@{
+	var userName = Context.Session.GetString("UserName");
+	var isAdmin = Context.Session.GetString("UserRole") == "Admin";
+	var ctrl = ViewContext.RouteData.Values["controller"]?.ToString();
+	string Active(string c) => string.Equals(ctrl, c, StringComparison.OrdinalIgnoreCase) ? "active" : "";
+}
+<header class="site-header">
+	<div class="wrap bar">
+		<a asp-controller="Home" asp-action="Index" class="brand" aria-label="AOV Cinemas, về trang chủ">AOV <small>CINEMAS</small></a>
+		<nav class="nav" id="nav" aria-label="Điều hướng chính">
+			<a asp-controller="Home" asp-action="Index" class="@Active("Home")">Phim</a>
+			<a asp-controller="Home" asp-action="Index" asp-fragment="uu-dai">Ưu đãi</a>
+			<a asp-controller="Home" asp-action="Index" asp-fragment="rap">Rạp chiếu</a>
+			@if (!string.IsNullOrEmpty(userName))
+			{
+				<a asp-controller="Booking" asp-action="MyTickets" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "MyTickets" ? "active" : "")">Vé của tôi</a>
+			}
+			@if (isAdmin)
+			{
+				<a asp-controller="Admin" asp-action="Dashboard" class="@Active("Admin")">Quản trị</a>
+			}
+		</nav>
+		<div class="user">
+			@if (!string.IsNullOrEmpty(userName))
+			{
+				<span class="hello"><i class="fa fa-user-circle"></i> <b>@userName</b></span>
+				<form asp-controller="Account" asp-action="Logout" method="post" class="inline">
+					<button type="submit" class="btn btn-ghost btn-sm"><i class="fa fa-sign-out"></i> Đăng xuất</button>
+				</form>
+			}
+			else
+			{
+				<a asp-controller="Account" asp-action="Login" class="btn btn-ghost btn-sm">Đăng nhập</a>
+				<a asp-controller="Account" asp-action="Register" class="btn btn-primary btn-sm">Đăng ký</a>
+			}
+		</div>
+		<button class="nav-toggle" type="button" aria-label="Mở menu" aria-controls="nav" aria-expanded="false"><i class="fa fa-bars"></i></button>
+	</div>
+</header>

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>@(ViewData["Title"] is string t && t.Length > 0 ? t + " - " : "")AOV Cinemas</title>
+	<meta name="description" content="Đặt vé xem phim trực tuyến: chọn suất chiếu, chọn ghế và nhận vé điện tử ngay." />
+	<link rel="icon" type="image/svg+xml" href="~/images/icons/favicon.svg" />
+	<link rel="icon" type="image/png" href="~/images/icons/favicon.png" />
+	<link rel="preconnect" href="https://fonts.googleapis.com" />
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@@400;500;600;700&family=Oswald:wght@@500;600;700&display=swap&subset=vietnamese" />
+	<link rel="stylesheet" href="~/fonts/font-awesome-4.7.0/css/font-awesome.min.css" />
+	<link rel="stylesheet" href="~/css/cinema.css" asp-append-version="true" />
+	<link rel="stylesheet" href="~/css/bankqr.css" asp-append-version="true" />
+	@if (ViewData["Curtain"] is true)
+	{
+		<script>try { if (!sessionStorage.getItem('curtain')) document.documentElement.classList.add('has-curtain'); } catch (e) {}</script>
+	}
+</head>
+<body>
+	@if (ViewData["Curtain"] is true)
+	{
+		<div class="drape" aria-hidden="true"><i></i><i></i></div>
+	}
+	<partial name="Header" />
+
+	<div class="toasts" role="status" aria-live="polite">
+		@if (TempData["Error"] is string err)
+		{
+			<div class="toast bad"><i class="fa fa-exclamation-circle"></i><span>@err</span></div>
+		}
+		@if (TempData["SuccessMessage"] is string ok)
+		{
+			<div class="toast ok"><i class="fa fa-check-circle"></i><span>@ok</span></div>
+		}
+	</div>
+
+	<main>@RenderBody()</main>
+
+	<partial name="Footer" />
+
+	<script src="~/js/cinema.js" asp-append-version="true"></script>
+	@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

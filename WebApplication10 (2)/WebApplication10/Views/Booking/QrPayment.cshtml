@@ -1,0 +1,72 @@
+@model WebApplication10.Models.Booking
+@{
+	ViewData["Title"] = "Thanh toán chuyển khoản";
+	var expiresAt = (DateTime)ViewBag.ExpiresAt;
+	var remaining = (int)Math.Max(0, (expiresAt - DateTime.Now).TotalSeconds);
+	var st = Model.Showtime;
+}
+
+<section class="wrap">
+	<div class="steps" aria-label="Các bước đặt vé">
+		<span><b><i class="fa fa-check" style="font-size:12px"></i></b> Chọn ghế</span><i class="sep"></i>
+		<span class="now"><b>2</b> Thanh toán</span><i class="sep"></i>
+		<span><b>3</b> Nhận vé</span>
+	</div>
+
+	@if (TempData["Error"] != null)
+	{
+		<div class="msg bad">@TempData["Error"]</div>
+	}
+
+	<div class="co-grid">
+		<div>
+			<div class="timer" id="timer" role="timer">
+				<i class="fa fa-hourglass-half"></i>
+				<span>Đơn thanh toán hết hạn sau</span> <b id="clock">--:--</b>
+			</div>
+
+			<div class="panel" style="text-align:center">
+				<h3>Quét mã để thanh toán</h3>
+				<p class="muted">Mở app ngân hàng bất kỳ và quét mã VietQR bên dưới</p>
+				<img src="@ViewBag.QrImage" alt="Mã QR thanh toán" style="display:block;margin:12px auto 16px;width:260px;height:260px;max-width:100%" />
+				<div class="line"><span>Ngân hàng</span><span><b>@ViewBag.BankName</b></span></div>
+				<div class="line"><span>Số tài khoản</span><span><b>@ViewBag.AccountNo</b></span></div>
+				<div class="line"><span>Người nhận</span><span><b>@ViewBag.AccountName</b></span></div>
+				<div class="line"><span>Số tiền</span><span><b>@Model.TotalAmount.ToString("N0") đ</b></span></div>
+				<div class="line"><span>Nội dung</span><span><b>@ViewBag.Content</b></span></div>
+				<p class="muted" style="margin-top:10px"><small>Giữ nguyên nội dung chuyển khoản để hệ thống đối soát đúng đơn.</small></p>
+			</div>
+		</div>
+
+		<aside>
+			<div class="stub">
+				<h3>@st.Movie.Title</h3>
+				<div class="sub">@st.StartTime.ToString("HH:mm, dd/MM/yyyy")</div>
+				<div class="perf"></div>
+				<div class="line big"><span>Tổng cộng</span><span>@Model.TotalAmount.ToString("N0") đ</span></div>
+			</div>
+			<form asp-action="ConfirmTransfer" method="post">
+				<input type="hidden" name="bookingId" value="@Model.BookingId" />
+				<button type="submit" class="btn btn-primary btn-block" style="margin-top:16px;padding:14px"><i class="fa fa-check"></i> Tôi đã chuyển khoản</button>
+			</form>
+			<a asp-action="SeatMap" asp-route-showtimeId="@Model.ShowtimeId" class="btn btn-ghost btn-block" style="margin-top:10px">Đổi ghế</a>
+		</aside>
+	</div>
+</section>
+
+@section Scripts {
+	<script>
+		(function () {
+			var left = @remaining;
+			var clock = document.getElementById('clock'), box = document.getElementById('timer');
+			var tick = function () {
+				if (left <= 0) { location.reload(); return; }
+				var m = Math.floor(left / 60), s = left % 60;
+				clock.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+				box.classList.toggle('urgent', left <= 60);
+				left--;
+			};
+			tick(); setInterval(tick, 1000);
+		})();
+	</script>
+}

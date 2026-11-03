@@ -1,0 +1,87 @@
+@model WebApplication10.Models.Booking
+@{
+	var b = Model;
+	var st = b.Showtime;
+	var cancelled = b.BookingStatus == "Cancelled";
+	var canCancel = ViewBag.CanCancel is true;
+	var details = b.BookingDetails.OrderBy(d => d.Seat.RowNumber).ThenBy(d => d.SeatId).ToList();
+	ViewData["Title"] = cancelled ? "Vé đã hủy" : "Vé của bạn";
+}
+
+<section class="wrap">
+	<div class="okhead">
+		@if (cancelled)
+		{
+			<div class="okmark" style="background:var(--velvet-2);color:#fff"><i class="fa fa-times"></i></div>
+			<h1>Đơn đặt vé đã được hủy</h1>
+			<p class="muted">Các ghế đã được trả lại và tiền sẽ được hoàn về phương thức thanh toán của bạn.</p>
+		}
+		else
+		{
+			<div class="okmark"><i class="fa fa-check"></i></div>
+			<h1>Đặt vé thành công</h1>
+			<p class="muted">Đưa mã QR của từng ghế cho nhân viên soát vé tại rạp. Bạn có thể xem lại vé bất cứ lúc nào ở mục Vé của tôi.</p>
+		}
+	</div>
+
+	<div class="tickets">
+		@for (var i = 0; i < details.Count; i++)
+		{
+			var d = details[i];
+			<article class="ticket @(cancelled ? "void" : "")" style="--i:@i">
+				<div class="t-main">
+					<h3>@st.Movie.Title</h3>
+					<div class="t-grid">
+						<div><small>Rạp</small><b>@st.Room.Cinema.CinemaName</b></div>
+						<div><small>Phòng chiếu</small><b>@st.Room.RoomName (@st.Room.RoomType)</b></div>
+						<div><small>Suất chiếu</small><b>@st.StartTime.ToString("HH:mm, dd/MM/yyyy")</b></div>
+						<div><small>Loại ghế, giá vé</small><b>@d.Seat.SeatType, @d.Price.ToString("N0") đ</b></div>
+					</div>
+					<div style="margin-top:16px;display:flex;align-items:baseline;gap:12px">
+						<small style="color:#7b6657">Ghế</small><span class="t-seat">@d.Seat.SeatNumber</span>
+					</div>
+				</div>
+				<div class="t-stub">
+					@if (!string.IsNullOrEmpty(d.Ticket?.Qrcode))
+					{
+						<img src="@(d.Ticket?.Qrcode)" alt="Mã QR vé ghế @d.Seat.SeatNumber" />
+					}
+					<code>@d.Ticket?.TicketCode</code>
+					<span class="badge @(d.Ticket?.TicketStatus == "Valid" ? "b-ok" : d.Ticket?.TicketStatus == "Used" ? "b-mid" : "b-bad")">
+						@(d.Ticket?.TicketStatus == "Valid" ? "Còn hiệu lực" : d.Ticket?.TicketStatus == "Used" ? "Đã sử dụng" : "Đã hủy")
+					</span>
+				</div>
+			</article>
+		}
+	</div>
+
+	<div class="panel" style="max-width:820px;margin:10px auto 0">
+		<h3>Thông tin thanh toán</h3>
+		<div class="line"><span class="muted">Khách hàng</span><span>@b.User?.FullName</span></div>
+		<div class="line"><span class="muted">Mã giao dịch</span><span>@b.Payment?.TransactionCode</span></div>
+		<div class="line"><span class="muted">Phương thức</span><span>@b.Payment?.PaymentMethod</span></div>
+		<div class="line"><span class="muted">Thời gian đặt</span><span>@b.BookingDate.ToString("HH:mm, dd/MM/yyyy")</span></div>
+		<div class="line"><span class="muted">Trạng thái</span><span>@(cancelled ? "Đã hoàn tiền" : "Đã thanh toán")</span></div>
+		<div class="line big"><span>Tổng tiền</span><span style="color:var(--brass-2)">@b.TotalAmount.ToString("N0") đ</span></div>
+
+		<div class="actions no-print">
+			<a asp-controller="Booking" asp-action="MyTickets" class="btn btn-ghost">Vé của tôi</a>
+			@if (!cancelled)
+			{
+				<button type="button" class="btn btn-brass" onclick="window.print()"><i class="fa fa-print"></i> In vé</button>
+			}
+			<a asp-controller="Home" asp-action="Index" class="btn btn-ghost">Về trang chủ</a>
+			@if (canCancel)
+			{
+				<form asp-action="Cancel" asp-route-bookingId="@b.BookingId" method="post" class="inline"
+					  onsubmit="return confirm('Bạn chắc chắn muốn hủy đơn đặt vé này?');">
+					<button type="submit" class="btn btn-ghost" style="color:var(--bad)">Hủy vé</button>
+				</form>
+			}
+		</div>
+		@if (!cancelled && !canCancel && b.Showtime.StartTime > DateTime.Now)
+		{
+			<p class="muted no-print" style="font-size:13px;margin:14px 0 0">Vé chỉ được hủy trước giờ chiếu ít nhất 2 tiếng.</p>
+		}
+	</div>
+</section>

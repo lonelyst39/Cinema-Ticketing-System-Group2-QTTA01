@@ -1,0 +1,199 @@
+@model WebApplication10.Models.HomeIndexViewModel
+@{
+	ViewData["Title"] = "Phim đang chiếu";
+	ViewData["Curtain"] = true;
+	var today = DateOnly.FromDateTime(DateTime.Today);
+	var featured = Model.Featured;
+	var genres = Model.Genres;
+	var promos = ViewBag.Promotions as List<WebApplication10.Models.Promotion> ?? new List<WebApplication10.Models.Promotion>();
+	var cinemas = ViewBag.Cinemas as List<WebApplication10.Models.Cinema> ?? new List<WebApplication10.Models.Cinema>();
+	var soonTab = Model.Status == "soon";
+	string AgeClass(string? r) => (r ?? "").Contains("18") ? "a18" : (r ?? "").Contains("16") ? "a16" : (r ?? "").Contains("13") ? "a13" : "aP";
+
+	// Tạo URL giữ nguyên bộ lọc; tham số null/mặc định sẽ không xuất hiện trên URL. Luôn trỏ về #phim.
+	string U(string? status, string? genre, string? q, int page) =>
+		(Url.Action("Index", "Home", new { status = status == "soon" ? "soon" : null, genre, q, page = page > 1 ? page : (int?)null }) ?? "/") + "#phim";
+
+	// Các số trang cần hiện: đầu, cuối, trang hiện tại và hai bên (0 = dấu …)
+	var pageNums = new List<int>();
+	for (var i = 1; i <= Model.TotalPages; i++)
+	{
+		if (i == 1 || i == Model.TotalPages || Math.Abs(i - Model.Page) <= 1)
+		{
+			if (pageNums.Count > 0 && i - pageNums[^1] > 1) pageNums.Add(0);
+			pageNums.Add(i);
+		}
+	}
+}
+
+@if (featured.Any())
+{
+	<section class="hero" aria-label="Phim nổi bật">
+		@for (var i = 0; i < featured.Count; i++)
+		{
+			var m = featured[i];
+			<article class="slide @(i == 0 ? "on" : "")" style="--h:@((m.MovieId * 47) % 360)">
+				<div class="slide-bg" style="background-image:url('@Url.Content("~/images/" + (m.Poster ?? ""))'),linear-gradient(160deg,hsl(@((m.MovieId * 47) % 360) 55% 30%),hsl(@(((m.MovieId * 47) % 360) + 40) 50% 12%))"></div>
+				<div class="wrap slide-grid">
+					<div>
+						<div class="chips">
+							<span class="age @AgeClass(m.AgeRating)" style="position:static">@m.AgeRating</span>
+							<span class="chip">@m.Genre</span>
+							<span class="chip">@m.Language</span>
+						</div>
+						<h1>@m.Title</h1>
+						<p class="lead">@m.Description</p>
+						<div class="actions">
+							<a asp-controller="Booking" asp-action="SelectShowtime" asp-route-movieId="@m.MovieId" class="btn btn-primary"><i class="fa fa-ticket"></i> Đặt vé</a>
+							<a href="https://www.youtube.com/results?search_query=@Uri.EscapeDataString(m.Title + " trailer")" target="_blank" rel="noopener" class="btn btn-ghost"><i class="fa fa-play"></i> Xem trailer</a>
+						</div>
+					</div>
+					<div class="slide-poster"><partial name="_Poster" model="m" /></div>
+				</div>
+			</article>
+		}
+		<div class="dots">
+			@for (var i = 0; i < featured.Count; i++)
+			{
+				<button type="button" class="dot" aria-label="Xem phim @(i + 1)"></button>
+			}
+		</div>
+	</section>
+}
+
+<section class="sec" id="phim">
+	<div class="wrap">
+		<h2 class="sec-title">Chọn phim bạn muốn xem</h2>
+		<p class="sec-sub">Lọc theo thể loại hoặc gõ tên phim để tìm nhanh.</p>
+
+		<div class="toolbar">
+			<div class="tabs" role="tablist">
+				<a href="@U("now", Model.Genre, Model.Q, 1)" class="tab @(soonTab ? "" : "on")" role="tab" aria-selected="@(soonTab ? "false" : "true")">Đang chiếu (@Model.NowCount)</a>
+				<a href="@U("soon", Model.Genre, Model.Q, 1)" class="tab @(soonTab ? "on" : "")" role="tab" aria-selected="@(soonTab ? "true" : "false")">Sắp chiếu (@Model.SoonCount)</a>
+			</div>
+			<form class="search" method="get" action="@(Url.Action("Index", "Home"))#phim" role="search">
+				<i class="fa fa-search"></i>
+				<input id="q" name="q" type="search" value="@Model.Q" placeholder="Tìm tên phim" autocomplete="off" aria-label="Tìm tên phim" />
+				@if (soonTab) { <input type="hidden" name="status" value="soon" /> }
+				@if (!string.IsNullOrEmpty(Model.Genre)) { <input type="hidden" name="genre" value="@Model.Genre" /> }
+			</form>
+		</div>
+
+		<div class="chips">
+			<a href="@U(Model.Status, null, Model.Q, 1)" class="chip genre @(string.IsNullOrEmpty(Model.Genre) ? "on" : "")">Tất cả thể loại</a>
+			@foreach (var g in genres)
+			{
+				<a href="@U(Model.Status, g, Model.Q, 1)" class="chip genre @(Model.Genre == g ? "on" : "")">@g</a>
+			}
+			@if (!string.IsNullOrEmpty(Model.Q))
+			{
+				<a href="@U(Model.Status, Model.Genre, null, 1)" class="chip clear" title="Xóa từ khóa tìm kiếm"><i class="fa fa-times"></i> “@Model.Q”</a>
+			}
+		</div>
+
+		@if (Model.Movies.Count > 0)
+		{
+			<p class="result-info">Hiển thị @Model.FirstItem–@Model.LastItem trong @Model.TotalItems phim</p>
+			<div class="movies" id="movies">
+				@foreach (var m in Model.Movies)
+				{
+					var soon = m.ReleaseDate > today;
+					<article class="mcard">
+						<a asp-controller="Booking" asp-action="SelectShowtime" asp-route-movieId="@m.MovieId" class="cover" aria-label="@m.Title">
+							<partial name="_Poster" model="m" />
+							<span class="cover-hover"><span class="btn btn-primary btn-sm">@(soon ? "Xem chi tiết" : "Đặt vé")</span></span>
+						</a>
+						<h3><a asp-controller="Booking" asp-action="SelectShowtime" asp-route-movieId="@m.MovieId">@m.Title</a></h3>
+						<p class="meta">@m.Genre, @m.Language</p>
+						<p class="meta">@(soon ? "Khởi chiếu" : "Công chiếu") @m.ReleaseDate.ToString("dd/MM/yyyy")</p>
+					</article>
+				}
+			</div>
+
+			@if (Model.TotalPages > 1)
+			{
+				<nav class="pager" aria-label="Phân trang danh sách phim">
+					@if (Model.Page > 1)
+					{
+						<a href="@U(Model.Status, Model.Genre, Model.Q, Model.Page - 1)" class="pg pg-nav" rel="prev" aria-label="Trang trước"><i class="fa fa-angle-left"></i> Trước</a>
+					}
+					else
+					{
+						<span class="pg pg-nav off" aria-hidden="true"><i class="fa fa-angle-left"></i> Trước</span>
+					}
+
+					@foreach (var n in pageNums)
+					{
+						if (n == 0)
+						{
+							<span class="pg gap" aria-hidden="true">…</span>
+						}
+						else if (n == Model.Page)
+						{
+							<span class="pg on" aria-current="page">@n</span>
+						}
+						else
+						{
+							<a href="@U(Model.Status, Model.Genre, Model.Q, n)" class="pg" aria-label="Trang @n">@n</a>
+						}
+					}
+
+					@if (Model.Page < Model.TotalPages)
+					{
+						<a href="@U(Model.Status, Model.Genre, Model.Q, Model.Page + 1)" class="pg pg-nav" rel="next" aria-label="Trang sau">Sau <i class="fa fa-angle-right"></i></a>
+					}
+					else
+					{
+						<span class="pg pg-nav off" aria-hidden="true">Sau <i class="fa fa-angle-right"></i></span>
+					}
+				</nav>
+			}
+		}
+		else
+		{
+			<div id="empty" class="empty">Không có phim nào khớp bộ lọc. Hãy đổi thể loại hoặc xóa từ khóa tìm kiếm.</div>
+		}
+	</div>
+</section>
+
+@if (promos.Any())
+{
+	<section class="sec" id="uu-dai" style="padding-top:10px">
+		<div class="wrap">
+			<h2 class="sec-title">Mã giảm giá đang có</h2>
+			<p class="sec-sub">Nhập mã ở bước thanh toán để được giảm ngay.</p>
+			<div class="coupons">
+				@foreach (var p in promos)
+				{
+					<div class="coupon">
+						<div>
+							<h4>@(p.DiscountType == "Percentage" ? $"Giảm {p.DiscountValue:0.##}%" : $"Giảm {p.DiscountValue:N0}đ")</h4>
+							<small>Đến hết @p.EndDate.ToString("dd/MM/yyyy"), còn @p.Quantity lượt</small>
+						</div>
+						<button type="button" class="code" data-copy="@p.PromotionCode" title="Bấm để sao chép">@p.PromotionCode</button>
+					</div>
+				}
+			</div>
+		</div>
+	</section>
+}
+
+@if (cinemas.Any())
+{
+	<section class="sec" id="rap" style="padding-top:10px">
+		<div class="wrap">
+			<h2 class="sec-title">Hệ thống rạp</h2>
+			<p class="sec-sub">Chọn rạp gần bạn khi đặt suất chiếu.</p>
+			<div class="cinemas">
+				@foreach (var c in cinemas)
+				{
+					<div class="cinema">
+						<h4><i class="fa fa-map-marker" style="color:var(--velvet-2)"></i> @c.CinemaName</h4>
+						<p>@c.Address</p>
+						<p><i class="fa fa-phone"></i> @c.Phone</p>
+					</div>
+				}
+			</div>
+		</div>
+	</section>
+}

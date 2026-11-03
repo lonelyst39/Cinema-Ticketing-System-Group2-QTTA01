@@ -1,0 +1,14 @@
+@model WebApplication10.Models.Movie
+@{
+	var rating = string.IsNullOrWhiteSpace(Model.AgeRating) ? "P" : Model.AgeRating;
+	var ageClass = rating.Contains("18") ? "a18" : rating.Contains("16") ? "a16" : rating.Contains("13") ? "a13" : "aP";
+	var hue = (Model.MovieId * 47) % 360;
+}
+<div class="poster" style="--h:@hue">
+	<div class="poster-art"><span>@Model.Title</span></div>
+	@if (!string.IsNullOrWhiteSpace(Model.Poster))
+	{
+		<img src="~/images/@Model.Poster" alt="Poster phim @Model.Title" loading="lazy" onerror="this.remove()" />
+	}
+	<span class="age @ageClass">@rating</span>
+</div>

@@ -1,0 +1,112 @@
+@model WebApplication10.Models.CheckoutViewModel
+@{
+	var st = Model.Showtime;
+	var remaining = (int)Math.Max(0, (Model.ExpiresAt - DateTime.Now).TotalSeconds);
+	ViewData["Title"] = "Thanh toán";
+}
+
+<section class="wrap">
+	<div class="steps" aria-label="Các bước đặt vé">
+		<span><b><i class="fa fa-check" style="font-size:12px"></i></b> Chọn ghế</span><i class="sep"></i>
+		<span class="now"><b>2</b> Thanh toán</span><i class="sep"></i>
+		<span><b>3</b> Nhận vé</span>
+	</div>
+
+	<form asp-action="Pay" method="post" id="payform" class="co-grid" data-url="@Url.Action("ApplyPromo", "Booking")">
+		<input type="hidden" name="showtimeId" value="@st.ShowtimeId" />
+
+		<div>
+			<div class="timer" id="timer" role="timer">
+				<i class="fa fa-hourglass-half"></i>
+				<span>Ghế của bạn được giữ trong</span> <b id="clock">--:--</b>
+			</div>
+
+			<div class="panel">
+				<h3>Phương thức thanh toán</h3>
+				<label class="pay"><input type="radio" name="paymentMethod" value="vietqr" checked /><i class="fa fa-qrcode"></i><span>Thanh toán bằng mã QR</span></label>
+			</div>
+
+			<div class="panel">
+				<h3>Mã khuyến mãi</h3>
+				<div class="promo">
+					<input class="input" id="promo" name="promoCode" placeholder="Nhập mã giảm giá" autocomplete="off" />
+					<button type="button" class="btn btn-ghost" id="apply">Áp dụng</button>
+				</div>
+				<div class="msg" id="promomsg" aria-live="polite"></div>
+				@if (Model.Promotions.Any())
+				{
+					<div class="chips" style="margin-top:6px">
+						@foreach (var p in Model.Promotions)
+						{
+							<button type="button" class="chip" data-fill="@p.PromotionCode">@p.PromotionCode</button>
+						}
+					</div>
+				}
+			</div>
+		</div>
+
+		<aside>
+			<div class="stub">
+				<h3>@st.Movie.Title</h3>
+				<div class="sub">@st.Room.Cinema.CinemaName, @st.Room.RoomName (@st.Room.RoomType)</div>
+				<div class="sub">@st.StartTime.ToString("HH:mm, dd/MM/yyyy")</div>
+				<div class="perf"></div>
+				@foreach (var l in Model.Lines)
+				{
+					<div class="line"><span>Ghế @l.Seat.SeatNumber <small class="muted">(@l.Seat.SeatType)</small></span><span>@l.Price.ToString("N0") đ</span></div>
+				}
+				<div class="line" style="margin-top:8px;border-top:1px solid var(--paper-line);padding-top:10px"><span>Tạm tính</span><span>@Model.Subtotal.ToString("N0") đ</span></div>
+				<div class="line hide" id="discrow"><span>Giảm giá</span><span class="off" id="disc">0 đ</span></div>
+				<div class="line big"><span>Tổng cộng</span><span id="total" data-subtotal="@((long)Model.Subtotal)">@Model.Subtotal.ToString("N0") đ</span></div>
+			</div>
+			<button type="submit" class="btn btn-primary btn-block" style="margin-top:16px;padding:14px"><i class="fa fa-lock"></i> Thanh toán</button>
+			<a asp-action="SeatMap" asp-route-showtimeId="@st.ShowtimeId" class="btn btn-ghost btn-block" style="margin-top:10px">Đổi ghế</a>
+		</aside>
+	</form>
+</section>
+
+@section Scripts {
+	<script>
+		(function () {
+			var form = document.getElementById('payform');
+			var left = @remaining;
+			var clock = document.getElementById('clock'), box = document.getElementById('timer');
+			var tick = function () {
+				if (left <= 0) { location.href = '@Url.Action("SeatMap", "Booking", new { showtimeId = st.ShowtimeId })'; return; }
+				var m = Math.floor(left / 60), s = left % 60;
+				clock.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+				box.classList.toggle('urgent', left <= 60);
+				left--;
+			};
+			tick(); setInterval(tick, 1000);
+
+			var fmt = function (n) { return n.toLocaleString('vi-VN') + ' đ'; };
+			var promo = document.getElementById('promo'), msg = document.getElementById('promomsg');
+			var total = document.getElementById('total'), sub = +total.dataset.subtotal;
+			var reset = function () { total.textContent = fmt(sub); document.getElementById('discrow').classList.add('hide'); };
+
+			document.querySelectorAll('[data-fill]').forEach(function (b) {
+				b.addEventListener('click', function () { promo.value = b.dataset.fill; document.getElementById('apply').click(); });
+			});
+			promo.addEventListener('input', function () { msg.textContent = ''; reset(); });
+			promo.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('apply').click(); } });
+
+			document.getElementById('apply').addEventListener('click', function () {
+				var code = promo.value.trim(); if (!code) return;
+				var fd = new FormData(form);
+				fd.set('code', code);
+				fetch(form.dataset.url, { method: 'POST', body: fd })
+					.then(function (r) { return r.json(); })
+					.then(function (d) {
+						msg.textContent = d.message; msg.className = 'msg ' + (d.ok ? 'ok' : 'bad');
+						if (d.ok) {
+							document.getElementById('disc').textContent = '-' + fmt(d.discount);
+							document.getElementById('discrow').classList.remove('hide');
+							total.textContent = fmt(d.total);
+						} else reset();
+					})
+					.catch(function () { msg.textContent = 'Không kiểm tra được mã lúc này, vui lòng thử lại.'; msg.className = 'msg bad'; });
+			});
+		})();
+	</script>
+}

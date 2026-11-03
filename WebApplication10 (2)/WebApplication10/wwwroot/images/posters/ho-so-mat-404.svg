@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 900" width="600" height="900" role="img" aria-label="Poster phim Hồ Sơ Mật 404">
+<defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0a0f14"/><stop offset="0.55" stop-color="#1f3a4a"/><stop offset="1" stop-color="#14100a"/></linearGradient><radialGradient id="halo" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#7aff9b" stop-opacity="0.85"/><stop offset="1" stop-color="#7aff9b" stop-opacity="0"/></radialGradient><linearGradient id="fade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset=".55" stop-color="#000" stop-opacity=".72"/><stop offset="1" stop-color="#000" stop-opacity=".95"/></linearGradient><clipPath id="card"><rect width="600" height="900"/></clipPath></defs>
+<g clip-path="url(#card)">
+<rect width="600" height="900" fill="url(#bg)"/>
+<circle cx="440" cy="230" r="190" fill="url(#halo)"/><circle cx="440" cy="230" r="64" fill="#7aff9b"/>
+<polygon points="-20,560 130,330 260,500 360,380 520,560 640,560 640,900 -20,900" fill="#000" opacity=".28"/>
+<polygon points="-20,640 90,470 200,600 330,450 470,620 640,520 640,900 -20,900" fill="#000" opacity=".32"/>
+<rect y="380" width="600" height="520" fill="url(#fade)"/>
+<text x="300" y="609" text-anchor="middle" font-family="Oswald,Impact,Arial Narrow,sans-serif" font-weight="700" font-size="74" fill="#fff" letter-spacing="2">HỒ SƠ MẬT</text><text x="300" y="691" text-anchor="middle" font-family="Oswald,Impact,Arial Narrow,sans-serif" font-weight="700" font-size="74" fill="#fff" letter-spacing="2">404</text>
+<rect x="230" y="721" width="140" height="4" fill="#7aff9b"/>
+<text x="300" y="765" text-anchor="middle" font-family="Be Vietnam Pro,Arial,sans-serif" font-size="26" fill="#7aff9b" letter-spacing="6">HÌNH SỰ</text>
+</g>
+</svg>

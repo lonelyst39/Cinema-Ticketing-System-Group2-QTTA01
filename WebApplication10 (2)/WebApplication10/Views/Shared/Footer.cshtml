@@ -1,0 +1,26 @@
+<footer class="foot">
+	<div class="wrap">
+		<div class="foot-grid">
+			<div>
+				<div class="brand" style="margin-bottom:10px">AOV <small>CINEMAS</small></div>
+				<p>Đặt vé trực tuyến, chọn ghế yêu thích và nhận vé điện tử có mã QR chỉ trong vài bước.</p>
+			</div>
+			<div>
+				<h4>Khám phá</h4>
+				<ul>
+					<li><a asp-controller="Home" asp-action="Index">Phim đang chiếu</a></li>
+					<li><a asp-controller="Home" asp-action="Index" asp-fragment="uu-dai">Ưu đãi</a></li>
+					<li><a asp-controller="Home" asp-action="Index" asp-fragment="rap">Hệ thống rạp</a></li>
+				</ul>
+			</div>
+			<div>
+				<h4>Hỗ trợ</h4>
+				<ul>
+					<li><a asp-controller="Booking" asp-action="MyTickets">Vé của tôi</a></li>
+					<li><a asp-controller="Home" asp-action="Privacy">Chính sách bảo mật</a></li>
+				</ul>
+			</div>
+		</div>
+		<div class="copy">© @DateTime.Now.Year AOV Cinemas. Dự án học tập, dữ liệu phim và rạp chỉ mang tính minh họa.</div>
+	</div>
+</footer>

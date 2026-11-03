@@ -1,0 +1,23 @@
+@using Microsoft.Extensions.Options
+@using WebApplication10.Infrastructure
+@model QrPayment
+@inject IOptions<BankOptions> Bank
+@{
+	var bank = Bank.Value;
+	var memo = VietQr.CleanMemo(Model.Memo);
+	var qr = VietQr.ToPngDataUri(VietQr.BuildPayload(bank, Model.Amount, Model.Memo));
+}
+<div class="bankqr">
+	<img class="bankqr-img" src="@qr" width="220" height="220" alt="Mã QR chuyển khoản @bank.BankName" />
+	<dl>
+		<div><dt>Ngân hàng</dt><dd>@bank.BankName</dd></div>
+		<div><dt>Số tài khoản</dt><dd><b>@bank.AccountNumber</b> <button type="button" class="code" data-copy="@bank.AccountNumber">Sao chép</button></dd></div>
+		@if (!string.IsNullOrWhiteSpace(bank.AccountName))
+		{
+			<div><dt>Chủ tài khoản</dt><dd>@bank.AccountName</dd></div>
+		}
+		<div><dt>Số tiền</dt><dd><b>@Model.Amount.ToString("N0") đ</b></dd></div>
+		<div><dt>Nội dung</dt><dd><b>@memo</b> <button type="button" class="code" data-copy="@memo">Sao chép</button></dd></div>
+	</dl>
+	<p class="muted bankqr-note">Mở app ngân hàng, quét mã QR và giữ nguyên số tiền cùng nội dung chuyển khoản để vé được xác nhận nhanh.</p>
+</div>

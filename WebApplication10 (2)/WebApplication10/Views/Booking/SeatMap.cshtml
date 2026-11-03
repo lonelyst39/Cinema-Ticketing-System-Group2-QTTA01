@@ -1,0 +1,118 @@
+@model IEnumerable<WebApplication10.Models.Seat>
+@using WebApplication10.Infrastructure
+@{
+	var st = (WebApplication10.Models.Showtime)ViewBag.Showtime;
+	var booked = ViewBag.Booked as HashSet<int> ?? new HashSet<int>();
+	var held = ViewBag.Held as HashSet<int> ?? new HashSet<int>();
+	var mine = ViewBag.Mine as HashSet<int> ?? new HashSet<int>();
+	var rows = Model.GroupBy(s => s.RowNumber).OrderBy(g => g.Key);
+	ViewData["Title"] = "Chọn ghế";
+}
+
+<section class="wrap">
+	<div class="steps" aria-label="Các bước đặt vé">
+		<span class="now"><b>1</b> Chọn ghế</span><i class="sep"></i>
+		<span><b>2</b> Thanh toán</span><i class="sep"></i>
+		<span><b>3</b> Nhận vé</span>
+	</div>
+
+	<div class="summary">
+		<span>Phim <b>@st.Movie.Title</b></span>
+		<span>Rạp <b>@st.Room.Cinema.CinemaName</b></span>
+		<span>Phòng <b>@st.Room.RoomName (@st.Room.RoomType)</b></span>
+		<span>Suất <b>@st.StartTime.ToString("HH:mm, dd/MM/yyyy")</b></span>
+	</div>
+
+	<div class="stage">
+		<div class="screen"></div>
+		<div class="screen-label">MÀN HÌNH</div>
+
+		<div class="seatscroll">
+			<div class="seats" role="group" aria-label="Sơ đồ ghế">
+				@foreach (var row in rows)
+				{
+					var idx = 0;
+					<div class="srow">
+						<span class="lbl">@row.Key</span>
+						@foreach (var seat in row)
+						{
+							idx++;
+							var isTaken = booked.Contains(seat.SeatId);
+							var isHeld = !isTaken && held.Contains(seat.SeatId);
+							var isMine = !isTaken && !isHeld && mine.Contains(seat.SeatId);
+							var price = Pricing.SeatPrice(st.Price, seat.SeatType);
+							var seatLabel = "Ghế " + seat.SeatNumber + ", " + seat.SeatType + ", " + price.ToString("N0") + " đ" + (isTaken ? ", đã đặt" : isHeld ? ", đang được giữ" : "");
+							<button type="button"
+									class="seat @seat.SeatType @(idx == 5 ? "gap" : "") @(isTaken ? "taken" : "") @(isHeld ? "held" : "") @(isMine ? "sel" : "")"
+									data-id="@seat.SeatId" data-name="@seat.SeatNumber" data-price="@((long)price)"
+									aria-pressed="@(isMine ? "true" : "false")"
+									aria-label="@seatLabel"
+									@((isTaken || isHeld) ? "disabled" : "")>@seat.SeatNumber</button>
+						}
+						<span class="lbl">@row.Key</span>
+					</div>
+				}
+			</div>
+		</div>
+
+		<div class="legend">
+			<span><button class="seat" tabindex="-1" aria-hidden="true"></button> Thường @st.Price.ToString("N0") đ</span>
+			<span><button class="seat VIP" tabindex="-1" aria-hidden="true"></button> VIP +@Pricing.VipSurcharge.ToString("N0") đ</span>
+			<span><button class="seat Couple" tabindex="-1" aria-hidden="true" style="width:30px"></button> Ghế đôi +@Pricing.CoupleSurcharge.ToString("N0") đ</span>
+			<span><button class="seat sel" tabindex="-1" aria-hidden="true"></button> Bạn chọn</span>
+			<span><button class="seat held" tabindex="-1" aria-hidden="true"></button> Đang được giữ</span>
+			<span><button class="seat taken" tabindex="-1" aria-hidden="true"></button> Đã đặt</span>
+		</div>
+	</div>
+
+	<form asp-action="Hold" method="post" id="dock" class="dock" data-max="@Pricing.MaxSeats">
+		<input type="hidden" name="showtimeId" value="@st.ShowtimeId" />
+		<input type="hidden" name="selectedSeatIds" id="ids" />
+		<div>
+			<div class="picked" id="picked"><span class="muted">Chưa chọn ghế nào. Tối đa @Pricing.MaxSeats ghế mỗi lần.</span></div>
+			<div class="muted" style="font-size:13px;margin-top:4px">Ghế sẽ được giữ @Pricing.HoldMinutes phút khi bạn sang bước thanh toán.</div>
+		</div>
+		<div style="display:flex;gap:18px;align-items:center">
+			<div class="total" id="total" aria-live="polite">0 đ</div>
+			<button type="submit" class="btn btn-primary" id="go" disabled>Tiếp tục thanh toán</button>
+		</div>
+	</form>
+</section>
+
+@section Scripts {
+	<script>
+		(function () {
+			var dock = document.getElementById('dock'), max = +dock.dataset.max;
+			var sel = new Map();
+			var fmt = function (n) { return n.toLocaleString('vi-VN') + ' đ'; };
+			function render() {
+				var names = [], total = 0, ids = [];
+				sel.forEach(function (b, id) { names.push(b.dataset.name); total += +b.dataset.price; ids.push(id); });
+				var p = document.getElementById('picked');
+				p.innerHTML = '';
+				if (!names.length) {
+					var s = document.createElement('span'); s.className = 'muted';
+					s.textContent = 'Chưa chọn ghế nào. Tối đa ' + max + ' ghế mỗi lần.'; p.appendChild(s);
+				}
+				names.forEach(function (n) { var t = document.createElement('span'); t.className = 'tag'; t.textContent = n; p.appendChild(t); });
+				document.getElementById('total').textContent = fmt(total);
+				document.getElementById('ids').value = ids.join(',');
+				document.getElementById('go').disabled = ids.length === 0;
+			}
+			document.querySelectorAll('.seats .seat').forEach(function (b) {
+				if (b.disabled) return;
+				if (b.classList.contains('sel')) sel.set(b.dataset.id, b);
+				b.addEventListener('click', function () {
+					var id = b.dataset.id;
+					if (sel.has(id)) { sel.delete(id); b.classList.remove('sel'); b.setAttribute('aria-pressed', 'false'); }
+					else {
+						if (sel.size >= max) { alert('Bạn chỉ được chọn tối đa ' + max + ' ghế mỗi lần.'); return; }
+						sel.set(id, b); b.classList.add('sel'); b.setAttribute('aria-pressed', 'true');
+					}
+					render();
+				});
+			});
+			render();
+		})();
+	</script>
+}
